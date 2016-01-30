@@ -1,0 +1,1 @@
+diploma of Kudryavtsev George
