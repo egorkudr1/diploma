@@ -2,8 +2,10 @@ import numpy as np
 
 
 class BaselineRating:
-    def __init__(self,  function="RMSE"):
+    def __init__(self,  user_movie, function="RMSE"):
         self.function = function
+        self.n_users = user_movie[0]
+        self.n_movies = user_movie[1]
         assert(self.function == "RMSE" or self.function == "MAE")
     
     
@@ -30,7 +32,7 @@ class AvrRating(BaselineRating):
 #method think every user will be in fitting
 class AvrUserRating(BaselineRating):
     def fit(self, data):
-        avruser = np.empty(data[:, 0].max())
+        avruser = np.empty(self.n_users)
         users = data[:, 0]
         for i in range(avruser.shape[0]):
             user_data = data[data[:, 0] == i + 1, 2]
@@ -49,7 +51,7 @@ class AvrUserRating(BaselineRating):
 #some item can absent in fitting
 class AvrItemRating(BaselineRating):
     def fit(self, data):
-        avritem = np.empty(data[:, 1].max())
+        avritem = np.empty(self.n_movies)
         items = data[:, 1]
         for i in range(avritem.shape[0]):
             item_data = data[data[:, 1] == i + 1, 2]
