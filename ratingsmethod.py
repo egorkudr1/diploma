@@ -79,40 +79,44 @@ class SVDplusplus:
             self.w[u] = np.sum(data[:, 0] == u + 1)
         self.w = np.sqrt(self.w)
 
+        if np.sum(self.w == 0) > 0:
+            print("w == 0")
 
         for j in range(self.N):
             loss = 0
             for u, i, r in data:
                 u -= 1
                 i -= 1
+                
                 pred_rui = self.__predict_ui(u, i)
                 eui = r - pred_rui
 
-                loss += eui * eui
-
                 bu = self.usermean[u]
-                self.usermean[u] += self.lRate * (eui - self.regB * bu)
-
-                loss += self.regB * bu * bu
+                self.usermean[u] += self.lRate * (eui - self.regB * bu)                
 
                 bi = self.itemmean[i]
                 self.itemmean[i] += self.lRate * (eui - self.regB * bi)
-
-                loss += self.regB * bi * bi
 
                 pu = self.P[u]
                 qi = self.Q[i]
 
                 self.P[u] += self.lRate * (eui * qi - self.regU * pu)
                 self.Q[i] += self.lRate * (eui * (pu + np.sum(self.Y[self.indexY[u]], axis=0) / self.w[u]) - self.regI * qi)
-
-                loss += np.sum(self.regU * pu * pu + self.regI * qi * qi)
-
-                loss += self.regU * np.sum(self.Y[self.indexY[u]] ** 2)
+                
+                if self.verbose == 2:
+                    loss += eui * eui
+                    loss += self.regB * bu * bu
+                    loss += self.regB * bi * bi
+                    loss += np.sum(self.regU * pu * pu + self.regI * qi * qi)
+                    loss += self.regU * np.sum(self.Y[self.indexY[u]] ** 2)
 
                 self.Y[self.indexY[u]] = self.lRate * (eui  / self.w[u] * qi[np.newaxis, :]  - self.regU * self.Y[self.indexY[u]])
 
+        
             if self.verbose == 1:
+                print("iteration", j)
+                sys.stdout.flush()
+            elif self.verbose == 2:
                 print ("iteration", j, "loss", loss)
                 sys.stdout.flush()
     
@@ -125,6 +129,7 @@ class SVDplusplus:
         else:
             result += np.sum(self.Q[i] * (self.P[u] + np.sum(self.Y[self.indexY[u]], axis=0) / w))
         
+
         return result
         
     
@@ -132,6 +137,6 @@ class SVDplusplus:
     def predict(self, data):
         result = []
         for u, i in data:
-            result.append(__predict_ui(u, i))
+            result.append(self.__predict_ui(u - 1, i - 1))
         return np.array(result)
         
