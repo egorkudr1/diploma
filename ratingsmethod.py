@@ -46,7 +46,7 @@ class SVD_ALS:
 
 
 class SVDplusplus:
-    def __init__(self, user_item, regB=0.1, regI=0.1, regU=0.1, lRate=0.01, N=100, K=5, verbose=1):
+    def __init__(self, user_item, regB=0.1, regI=0.1, regU=0.1, lRate=0.01, N=100, K=5, verbose=0):
         self.N_user = user_item[0]
         self.N_items = user_item[1]
         self.regB = regB
