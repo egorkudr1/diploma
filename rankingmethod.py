@@ -38,12 +38,11 @@ class CLiMF:
         self.verbose = verbose
         self.N_users = user_item[0]
         self.N_items = user_item[1]
+        self.U = 0.1 * np.random.random((self.N_users, self.K))
+        self.V = 0.1 * np.random.random((self.N_items, self.K))
 
 
     def fit(self, data):
-        self.U = np.random.random((self.N_users, self.K))
-        self.V = np.random.random((self.N_items, self.K))
-
         for t in range(self.maxiter):
             for u, items in enumerate(data):
                 curU = self.U[u]
