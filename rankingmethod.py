@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.special import expit
+import random
 
 class PopRec:
     def __init__(self, user_item):
@@ -91,20 +92,60 @@ class CLiMF:
         return np.argsort(-fij)
 
 
+class BPR_MF:
+    def __init__(self, user_item, K, lrate, regU, regIpos, regIneg, maxiter, verbose=0):
+        self.K = K
+        self.lrate = lrate
+        self.regU = regU
+        self.regIpos = regIpos
+        self.regIneg = regIneg
+        self.maxiter = maxiter
+        self.N_users = user_item[0]
+        self.N_items = user_item[1]
+        self.U = 0.1 * np.random.random((self.N_users, self.K))
+        self.V = 0.1 * np.random.random((self.N_items, self.K))
 
 
-                # diff_f_ij = f_ij[:, np.newaxis] - f_ij[np.newaxis, :]
-                # dU += expit(diff_f_ij) / (1 - expit(diff_f_ij)) * 
-                # for i in items:
-                #     f_ij = np.sum(self.V[i] * curU)
-                #     dU += expit(-f_ij) * self.V[i]
-                #     diff_f_ij = f_ij - np.sum(curU[np.newaxis, :] * self.V[items], axis=1)
-                #     tmp = expit(diff_f_ij) * expit(-diff_f_ij) / (1- expit(diff_f_ij))
-                #     diffV = self.V[i][:, np.newaxis] - self.V[items].T
-                #     tmp = tmp[np.newaxis:,] * diffV
-                #     dU += np.sum(tmp, axis=1)
+    def fit(self, data):
+        num_pos_feedback = len(data) * len(data[0])
+        print(num_pos_feedback)
+
+            
+        for t in range(self.maxiter):
+            loss = 0
+            for l in range(num_pos_feedback):
+                u = random.randint(self.N_users - 1)
+                i = random.choice(data[u])
+                while(True):
+                    j = random.randint(self.N_items - 1)
+                    if j in data[u]:
+                        continue
+                    break
+             
+                curU = self.U[u, :].copy()
+                curVi = self.V[i, :].copy()
+                curVj = self.V[j, :].copy()
+
+                xuij = np.sum(curU * curVi) - np.sum(curU * curVj)
+                loss += -np.log(expit(xuij))
+                coef = expit(-xuij)
                 
-                # dU -= self.reg * curU
-                # self.U[u] += self.lrate * dU
+                self.U[u] += self.lrate * (coef * (curVi - curVj) - self.regU * curU)
+                self.V[i] += self.lrate * (coef * (curU) - self.regIpos * curVi)
+                self.V[j] += self.lrate * (- coef * curU - self.regIneg * curVj)
 
-                # for i in items:
+                loss += self.regU * np.sum(curU ** 2) + self.regIpos * np.sum(curVi ** 2) + self.regIneg * np.sum(curVj ** 2)
+
+            if verbose == 1:
+                print("iteration", t)
+                sys.stdout.flush()
+            elif verbose == 2:
+                print("iteration", t, "loss", loss)
+                sys.stdout.flush()
+
+
+    def get_list(self, u):
+        curU = self.U[u]
+        fij = np.sum(self.U[u][np.newaxis, :] * self.V, axis=1)
+        return np.argsort(-fij)
+
