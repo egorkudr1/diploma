@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.special import expit
 import random
+import sys
 
 class PopRec:
     def __init__(self, user_item):
@@ -72,8 +73,10 @@ class CLiMF:
 
             if self.verbose == 1:
                 print("iteration", t)
+                sys.stdout.flush()
             elif self.verbose == 2:
                 print("iteration", t, "loss?", self.get_loss(data))
+                sys.stdout.flush()
 
 
     def get_loss(self, data):
@@ -104,20 +107,21 @@ class BPR_MF:
         self.N_items = user_item[1]
         self.U = 0.1 * np.random.random((self.N_users, self.K))
         self.V = 0.1 * np.random.random((self.N_items, self.K))
+        self.verbose = verbose
 
 
     def fit(self, data):
-        num_pos_feedback = len(data) * len(data[0])
-        print(num_pos_feedback)
-
+        num_pos_feedback = 0
+        for items in data:
+            num_pos_feedback += len(items)
             
         for t in range(self.maxiter):
             loss = 0
-            for l in range(num_pos_feedback):
-                u = random.randint(self.N_users - 1)
+            for l in range(num_pos_feedback * 10):
+                u = random.randint(0, self.N_users - 1)
                 i = random.choice(data[u])
                 while(True):
-                    j = random.randint(self.N_items - 1)
+                    j = random.randint(0, self.N_items - 1)
                     if j in data[u]:
                         continue
                     break
@@ -127,19 +131,21 @@ class BPR_MF:
                 curVj = self.V[j, :].copy()
 
                 xuij = np.sum(curU * curVi) - np.sum(curU * curVj)
-                loss += -np.log(expit(xuij))
+                
                 coef = expit(-xuij)
                 
                 self.U[u] += self.lrate * (coef * (curVi - curVj) - self.regU * curU)
                 self.V[i] += self.lrate * (coef * (curU) - self.regIpos * curVi)
                 self.V[j] += self.lrate * (- coef * curU - self.regIneg * curVj)
 
-                loss += self.regU * np.sum(curU ** 2) + self.regIpos * np.sum(curVi ** 2) + self.regIneg * np.sum(curVj ** 2)
+                if verbose == 2:
+                    loss += -np.log(expit(xuij))
+                    loss += self.regU * np.sum(curU ** 2) + self.regIpos * np.sum(curVi ** 2) + self.regIneg * np.sum(curVj ** 2)
 
-            if verbose == 1:
+            if self.verbose == 1:
                 print("iteration", t)
                 sys.stdout.flush()
-            elif verbose == 2:
+            elif self.verbose == 2:
                 print("iteration", t, "loss", loss)
                 sys.stdout.flush()
 
