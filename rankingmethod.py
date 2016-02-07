@@ -138,7 +138,7 @@ class BPR_MF:
                 self.V[i] += self.lrate * (coef * (curU) - self.regIpos * curVi)
                 self.V[j] += self.lrate * (- coef * curU - self.regIneg * curVj)
 
-                if verbose == 2:
+                if self.verbose == 2:
                     loss += -np.log(expit(xuij))
                     loss += self.regU * np.sum(curU ** 2) + self.regIpos * np.sum(curVi ** 2) + self.regIneg * np.sum(curVj ** 2)
 
