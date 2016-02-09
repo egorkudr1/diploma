@@ -8,6 +8,7 @@ class PopRec:
         self.N_users = user_item[0]
         self.N_items = user_item[1]
     
+
     def fit(self, data):
         votes = np.bincount(np.array(data).ravel())
         self.most_pop = np.argsort(-votes)
@@ -22,8 +23,10 @@ class RandomRec:
         self.N_users = user_item[0]
         self.N_items = user_item[1]
 
+
     def fit(self, data):
         pass
+
 
     def get_list(self, u):
         res = np.arange(self.N_items)
@@ -148,6 +151,71 @@ class BPR_MF:
             elif self.verbose == 2:
                 print("iteration", t, "loss", loss)
                 sys.stdout.flush()
+
+
+    def get_list(self, u):
+        curU = self.U[u]
+        fij = np.sum(self.U[u][np.newaxis, :] * self.V, axis=1)
+        return np.argsort(-fij)
+
+
+class iMF:
+    def __init__(self, user_item, K, lmbd, alpha, maxiter, verbose=0):
+        self.N_users = user_item[0]
+        self.N_items = user_item[1]
+        self.K = K
+        self.lmbd = lmbd
+        self.alpha = alpha
+        self.maxiter = maxiter
+        self.verbose = verbose
+        self.U = 0.1 * np.random.random((self.N_users, self.K))
+        self.V = 0.1 * np.random.random((self.N_items, self.K))
+
+
+    def fit(self, data):
+        itemdata = [[] for i in range(self.N_items)]
+        for u, items in enumerate(data):
+            for i in items:
+                itemdata[i].append(u) 
+
+        for t in range(self.maxiter):
+            W = np.dot(self.V.T, self.V)
+            for u, items in enumerate(data):
+                self.U[u] = self.__update_latent(self.V, W, items)
+
+            W = np.dot(self.U.T, self.U)
+            for i, users in enumerate(itemdata):
+                self.V[i] = self.__update_latent(self.U, W, users)
+
+            if self.verbose == 1:
+                print('iteration', t)
+                sys.stdout.flush()
+            elif self.verbose == 2:
+                print('iteration', t, 'loss', self.count_loss(data))
+                sys.stdout.flush()
+
+
+    def __update_latent(self, V, W, index):
+        localV = V[index,  :]
+        if localV.shape[0] > 0:
+            M = W + self.alpha * np.dot(localV.T, localV) + np.diag(self.lmbd * np.ones(self.K))
+            res = np.dot(np.linalg.inv(M), (1 + self.alpha) * np.sum(localV, axis=0))
+        else:
+            res = np.zeros(self.K)
+        return res
+
+
+    def count_loss(self, data):
+        loss = 0
+        for u, items in enumerate(data):
+            c = np.ones(self.N_items)
+            p = np.zeros(self.N_items)
+            c[items] += self.alpha
+            p[items] = 1
+            ulist = np.sum(self.U[u][np.newaxis, :] * self.V, axis=1)
+            loss += np.sum(c * (p - ulist) ** 2)
+        loss += self.lmbd * (np.sum(self.U ** 2) + np.sum(self.V ** 2))
+        return loss
 
 
     def get_list(self, u):
