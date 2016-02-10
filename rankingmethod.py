@@ -43,8 +43,8 @@ class CLiMF:
         self.verbose = verbose
         self.N_users = user_item[0]
         self.N_items = user_item[1]
-        self.U = 0.1 * np.random.random((self.N_users, self.K))
-        self.V = 0.1 * np.random.random((self.N_items, self.K))
+        self.U = 0.01 * np.random.random((self.N_users, self.K))
+        self.V = 0.01 * np.random.random((self.N_items, self.K))
 
 
     def fit(self, data):
@@ -52,33 +52,37 @@ class CLiMF:
             for u, items in enumerate(data):
                 curU = self.U[u]
                 curV = self.V[items]
+
                 f_ij = np.sum(self.U[u][np.newaxis, :] * curV, axis=1)
                 diff_f_ij = f_ij[:, np.newaxis] - f_ij[np.newaxis, :]
                 diff_V_ij = curV[:, np.newaxis, :] - curV[np.newaxis, :, :]
                 g_ij = expit(-f_ij)
-
-                dU = np.sum(g_ij[:, np.newaxis] * curV, axis=0)
-
                 diverV =  expit(diff_f_ij)*expit(-diff_f_ij)
-
                 denominanor  = 1 / (1 - expit(diff_f_ij))
 
+                dU = np.sum(g_ij[:, np.newaxis] * curV, axis=0)
                 tmp = diverV * denominanor
                 dU -= np.sum(tmp[:, :, np.newaxis] * diff_V_ij, axis=(0, 1))
                 dU -= self.reg * curU
                 self.U[u] += self.lrate * dU
 
                 for j, index in enumerate(items):
-                    coef = g_ij[j]
-                    coef += np.sum(diverV[j] * (denominanor[:, j] - denominanor[j, :]))
-                    dV = coef * self.U[u] - self.reg * curV[j]
+                    f_ij = np.sum(self.U[u][np.newaxis, :] * curV, axis=1)
+                    diff_f_ij = f_ij[:, np.newaxis] - f_ij[np.newaxis, :]
+                    diff_V_ij = curV[:, np.newaxis, :] - curV[np.newaxis, :, :]
+                    g_ij = expit(-f_ij)
+                    diverV =  expit(diff_f_ij)*expit(-diff_f_ij)
+                    denominanor  = 1 / (1 - expit(diff_f_ij))
+                  
+                    coef = np.sum(diverV[j, :] * (denominanor[:, j] - denominanor[j, :]))
+                    dV = coef  * self.U[u] + g_ij[j] - self.reg * curV[j]
                     self.V[index] += self.lrate * dV
-
+                
             if self.verbose == 1:
                 print("iteration", t)
                 sys.stdout.flush()
             elif self.verbose == 2:
-                print("iteration", t, "loss?", self.get_loss(data))
+                print("iteration", t, "loss", self.get_loss(data))
                 sys.stdout.flush()
 
 
@@ -168,8 +172,8 @@ class iMF:
         self.alpha = alpha
         self.maxiter = maxiter
         self.verbose = verbose
-        self.U = 0.1 * np.random.random((self.N_users, self.K))
-        self.V = 0.1 * np.random.random((self.N_items, self.K))
+        self.U = 0.01 * np.random.random((self.N_users, self.K))
+        self.V = 0.01 * np.random.random((self.N_items, self.K))
 
 
     def fit(self, data):
@@ -181,11 +185,11 @@ class iMF:
         for t in range(self.maxiter):
             W = np.dot(self.V.T, self.V)
             for u, items in enumerate(data):
-                self.U[u] = self.__update_latent(self.V, W, items)
+                self.U[u] = self._update_latent(self.V, W, items)
 
             W = np.dot(self.U.T, self.U)
             for i, users in enumerate(itemdata):
-                self.V[i] = self.__update_latent(self.U, W, users)
+                self.V[i] = self._update_latent(self.U, W, users)
 
             if self.verbose == 1:
                 print('iteration', t)
@@ -195,7 +199,7 @@ class iMF:
                 sys.stdout.flush()
 
 
-    def __update_latent(self, V, W, index):
+    def _update_latent(self, V, W, index):
         localV = V[index,  :]
         if localV.shape[0] > 0:
             M = W + self.alpha * np.dot(localV.T, localV) + np.diag(self.lmbd * np.ones(self.K))
