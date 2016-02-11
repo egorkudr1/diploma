@@ -2,7 +2,7 @@ import numpy as np
 from sklearn.metrics import roc_auc_score
 
 
-def get_prec_K(K, train, test,  cls,  skip_train=False, top=None):
+def get_prec_K(train, test,  cls,  skip_train=True, top=None, K=5):
     res = 0
     for u, (test_cur, train_cur) in enumerate(zip(test, train)):
         ulist = cls.get_list(u)
@@ -25,7 +25,7 @@ def get_prec_K(K, train, test,  cls,  skip_train=False, top=None):
     return res
 
 
-def get_one_recal_K(K, train, test,  cls,  skip_train=False, top=None):
+def get_one_recal_K(train, test,  cls,  skip_train=True, top=None, K=5):
     res = 0
     for u, (test_cur, train_cur) in enumerate(zip(test, train)):
         ulist = cls.get_list(u)
@@ -47,7 +47,7 @@ def get_one_recal_K(K, train, test,  cls,  skip_train=False, top=None):
     return res
 
 
-def get_RR(train, test, ulist, skip_train=False, top=None):
+def get_RR(train, test, ulist, skip_train=True, top=None):
     n_skip = 0 
     for rank, item in enumerate(ulist):
         if top is not None and item in top:
@@ -62,7 +62,7 @@ def get_RR(train, test, ulist, skip_train=False, top=None):
     return 0
 
 
-def get_MRR(train, test,  cls, skip_train=False, top=None):
+def get_MRR(train, test,  cls, skip_train=True, top=None, K=5):
     res = 0
     for u, (test_cur, train_cur) in enumerate(zip(test, train)):
         ulist = cls.get_list(u)
@@ -72,31 +72,27 @@ def get_MRR(train, test,  cls, skip_train=False, top=None):
     return res
 
 
-def get_AUC(train, test, cls, skip_train=False, top=None, K=5):
+def get_AUC(train, test, cls, skip_train=True, top=None, K=5):
     res = 0
-    ans = np.arange(K)[::-1]
     for u, (test_cur, train_cur) in enumerate(zip(test, train)):
         ulist = cls.get_list(u)
         if  skip_train:
             mask = np.in1d(ulist, train_cur)
             ulist = ulist[~mask]
-        localK = min(K, ulist.shape[0])
-        mask = np.in1d(ulist[:localK], test_cur)
+        mask = np.in1d(ulist, test_cur)
         if not skip_train:
-            mask2 = np.in1d(ulist[:localK], train_cur)
+            mask2 = np.in1d(ulist, train_cur)
             mask = np.logical_or(mask, mask2)
         if top is not None:
-            masktmp = np.in1d(ulist[:localK], top)
+            masktmp = np.in1d(ulist, top)
             mask = np.logical_and(mask, np.logical_not(masktmp))
-        if (mask == True).all():
-            res += 1
-        elif not (mask == False).all():
-            res += roc_auc_score(mask, ans[:localK])
+
+        res += roc_auc_score(mask, np.arange(ulist.shape[0])[::-1])
     res /= len(test)
     return res
 
 
-def get_NDCG(train, test, cls, skip_train=False, top=None, K=5):
+def get_NDCG(train, test, cls, skip_train=True, top=None, K=5):
     res = 0
     D = 1 / np.log(np.arange(K) + 2)
     maxNDCG = np.sum(D)

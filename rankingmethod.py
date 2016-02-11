@@ -43,11 +43,12 @@ class CLiMF:
         self.verbose = verbose
         self.N_users = user_item[0]
         self.N_items = user_item[1]
-        self.U = 0.01 * np.random.random((self.N_users, self.K))
-        self.V = 0.01 * np.random.random((self.N_items, self.K))
+        
 
 
     def fit(self, data):
+        self.U = 0.01 * np.random.random((self.N_users, self.K))
+        self.V = 0.01 * np.random.random((self.N_items, self.K))
         for t in range(self.maxiter):
             for u, items in enumerate(data):
                 curU = self.U[u]
@@ -75,7 +76,7 @@ class CLiMF:
                     denominanor  = 1 / (1 - expit(diff_f_ij))
                   
                     coef = np.sum(diverV[j, :] * (denominanor[:, j] - denominanor[j, :]))
-                    dV = coef  * self.U[u] + g_ij[j] - self.reg * curV[j]
+                    dV = (coef + g_ij[j]) * self.U[u]  - self.reg * curV[j]
                     self.V[index] += self.lrate * dV
                 
             if self.verbose == 1:
@@ -112,12 +113,12 @@ class BPR_MF:
         self.maxiter = maxiter
         self.N_users = user_item[0]
         self.N_items = user_item[1]
-        self.U = 0.1 * np.random.random((self.N_users, self.K))
-        self.V = 0.1 * np.random.random((self.N_items, self.K))
         self.verbose = verbose
 
 
     def fit(self, data):
+        self.U = 0.1 * np.random.random((self.N_users, self.K))
+        self.V = 0.1 * np.random.random((self.N_items, self.K))
         num_pos_feedback = 0
         for items in data:
             num_pos_feedback += len(items)
@@ -172,11 +173,12 @@ class iMF:
         self.alpha = alpha
         self.maxiter = maxiter
         self.verbose = verbose
-        self.U = 0.01 * np.random.random((self.N_users, self.K))
-        self.V = 0.01 * np.random.random((self.N_items, self.K))
+        
 
 
     def fit(self, data):
+        self.U = 0.01 * np.random.random((self.N_users, self.K))
+        self.V = 0.01 * np.random.random((self.N_items, self.K))
         itemdata = [[] for i in range(self.N_items)]
         for u, items in enumerate(data):
             for i in items:

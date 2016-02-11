@@ -1,18 +1,20 @@
 import numpy as np
 import rankingmeasure
 import sys
+import pickle
+from scipy.sparse import csr_matrix
 
 
-def all_measures(train, test, method, skip_train=False, top=None):
-    print("precision5", rankingmeasure.get_prec_K(5, train, test, method, skip_train=skip_train, top=top))
+def all_measures(train, test, method, skip_train=False, top=None, K=5):
+    print("precision5", rankingmeasure.get_prec_K(train, test, method, skip_train=skip_train, top=top, K=K))
     sys.stdout.flush()
-    print("1-call5", rankingmeasure.get_one_recal_K(5, train, test, method, skip_train=skip_train, top=top))
+    print("1-call5", rankingmeasure.get_one_recal_K(train, test, method, skip_train=skip_train, top=top, K=K))
     sys.stdout.flush()
-    print("MRR", rankingmeasure.get_MRR(train, test, method, skip_train=skip_train, top=top))
+    print("MRR", rankingmeasure.get_MRR(train, test, method, skip_train=skip_train, top=top, K=K))
     sys.stdout.flush()
-    print("AUC", rankingmeasure.get_AUC(train, test, method, skip_train=skip_train, top=top))
+    print("AUC", rankingmeasure.get_AUC(train, test, method, skip_train=skip_train, top=top, K=K))
     sys.stdout.flush()
-    print("NGDC", rankingmeasure.get_NDCG(train, test, method, skip_train=skip_train, top=top))
+    print("NGDC", rankingmeasure.get_NDCG(train, test, method, skip_train=skip_train, top=top, K=K))
     sys.stdout.flush()
 
 
@@ -58,12 +60,25 @@ def givenK_train_test(data, K):
     return (train, test, xlist)
 
 
+def create_csr(data, user_item, file_name):
+    inf = []
+    row = []
+    col = []
+    for u, items in enumerate(data):
+        for i in items:
+            inf.append(1)
+            row.append(u)
+            col.append(i)
+    new_data = csr_matrix((inf,(row, col)), shape=user_item).astype('float')
+    with open(file_name, 'wb') as f:
+        pickle.dump(new_data, f, 0)
+#     return new_data
+
+
+
 def create_original_sample(data, index):
     res = []
     for i in index:
         res.append(data[i])
     return res
 
-
-def wow():
-    return "Wowsds"
