@@ -229,3 +229,57 @@ class iMF:
         fij = np.sum(self.U[u][np.newaxis, :] * self.V, axis=1)
         return np.argsort(-fij)
 
+
+class TFMAP:
+    def __init_(self, user_item, K, reg, lrate, n_sample, maxiter, verbose=0):
+        self.N_users = user_item[0]
+        self.N_items = user_item[1]
+        self.K = K
+        self.reg = reg
+        self.lrate = lrate
+        self.n_sample = n_sample
+        self.maxiter = maxiter
+        self.verbose = verbose
+
+    def fit(self, data):
+        self.U = 0.01 * np.random.random((self.N_users, self.K))
+        self.V = 0.01 * np.random.random((self.N_items, self.K))    
+        itemdata = [[] for i in range(self.N_items)]
+        for u, items in enumerate(data):
+            for i in items:
+                itemdata[i].append(u) 
+
+        for t in range(self.maxiter):
+            for u, items in enumerate(data):
+                curV = self.V[items]
+                fui = np.dot(curV, self.U[u])
+                diff_fui = fui[:, np.newaxis] - fu[np.newaxis, :]
+                gi = expit(fui)
+                gij = expit(diff_fui)
+                diff_gi = expit(fui) * expit(-fui)
+                diff_gij = expit(diff_fui) * expit(-diff_fui)
+                delta =  diff_gi * np.sum(gij, axis=0) - gi * np.sum(diff_gij, axis=0)
+                tmp = np.sum(gij[np.newaxis, :] * diff_gij, axis=1)
+                dU = (np.sum(delta * curV)  + np.sum(tmp * curV)) / len(items) - self.reg 
+                self.U[u] += self.lrate * dU
+
+            for u, items in enumerate(data):
+                buf_items = self._buffer_constract(u, items)
+                for i, users in enumerate(buf_items):
+
+                    for m, mitems in self.U[users]:
+                        
+
+    def _buffer_constract(self, u, items):
+        curU = self.U[u]
+        p = np.min(np.dot(self.V[items], curU))
+        fij = np.dot(self.V, curU)
+        yones = np.zeros(self.N_items)
+        yones[index] = 1
+        S = np.where(np.logical(fij >= p, yones))
+        if S.shape[0] > self.n_sample:
+            S = np.random.choice(S, self.n_sample)
+        if S.shape[0] > 0:
+            return np.concatenate((items, S))
+        else:
+            return items
