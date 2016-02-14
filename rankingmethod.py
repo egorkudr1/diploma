@@ -2,6 +2,7 @@ import numpy as np
 from scipy.special import expit
 import random
 import sys
+import rankingmeasure
 
 class PopRec:
     def __init__(self, user_item):
@@ -231,7 +232,7 @@ class iMF:
 
 
 class TFMAP:
-    def __init_(self, user_item, K, reg, lrate, n_sample, maxiter, verbose=0):
+    def __init__(self, user_item, K=10, reg=0.001, lrate=0.001, n_sample=100, maxiter=20, verbose=0):
         self.N_users = user_item[0]
         self.N_items = user_item[1]
         self.K = K
@@ -253,33 +254,67 @@ class TFMAP:
             for u, items in enumerate(data):
                 curV = self.V[items]
                 fui = np.dot(curV, self.U[u])
-                diff_fui = fui[:, np.newaxis] - fu[np.newaxis, :]
+                diff_fui = fui[:, np.newaxis] - fui[np.newaxis, :]
                 gi = expit(fui)
                 gij = expit(diff_fui)
                 diff_gi = expit(fui) * expit(-fui)
                 diff_gij = expit(diff_fui) * expit(-diff_fui)
                 delta =  diff_gi * np.sum(gij, axis=0) - gi * np.sum(diff_gij, axis=0)
-                tmp = np.sum(gij[np.newaxis, :] * diff_gij, axis=1)
-                dU = (np.sum(delta * curV)  + np.sum(tmp * curV)) / len(items) - self.reg 
+                tmp = np.sum(gi[np.newaxis, :] * diff_gij, axis=1)
+                dU = (np.sum(delta[:, np.newaxis] * curV)  + np.sum(tmp[:, np.newaxis] * curV)) / len(items) - self.reg * self.U[u]
                 self.U[u] += self.lrate * dU
 
             for u, items in enumerate(data):
                 buf_items = self._buffer_constract(u, items)
-                for i, users in enumerate(buf_items):
+                for i, index in enumerate(buf_items):
+                    fui = np.dot(self.V[buf_items], self.U[u])
+                    diff_fui = fui - fui[i] 
+                    gi = expit(fui[i])
+                    gij = expit(diff_fui)
+                    diff_gi = expit(fui) * expit(-fui)
+                    diff_gij = expit(gij) * expit(-gij)
+                    
+                    coef = np.sum(diff_gi[i] * gij  + (gij - gij[i]) * diff_gij) / len(buf_items)
+                    dV = coef * self.U[u] - self.reg * self.V[index]
+                    self.V[index] += self.lrate * dV
 
-                    for m, mitems in self.U[users]:
-                        
+            if self.verbose == 1:
+                print('iteration', t)
+                sys.stdout.flush()
+            elif self.verbose == 2:
+                print('iteration', t, 'loss', self.count_loss(data))
+                sys.stdout.flush()
+            elif self.verbose == 3:
+                print('iteration', t, 'loss', rankingmeasure.get_MAP(data, data, self, skip_train=False))
+                sys.stdout.flush()
 
     def _buffer_constract(self, u, items):
-        curU = self.U[u]
-        p = np.min(np.dot(self.V[items], curU))
-        fij = np.dot(self.V, curU)
+        p = np.min(np.dot(self.V[items], self.U[u]))
+        fij = np.dot(self.V, self.U[u])
         yones = np.zeros(self.N_items)
-        yones[index] = 1
-        S = np.where(np.logical(fij >= p, yones))
+        yones[items] = 1
+        S = np.where(np.logical_and(fij >= p, yones == 0))[0]
         if S.shape[0] > self.n_sample:
             S = np.random.choice(S, self.n_sample)
-        if S.shape[0] > 0:
-            return np.concatenate((items, S))
-        else:
-            return items
+        B_minus = S[np.argsort(-fij[S])]
+        if B_minus.shape[0] > len(items):
+            B_minus = B_minus[:len(items)]
+        return np.concatenate((items, B_minus))
+    
+
+    def count_loss(self, data):
+        loss = 0
+        for u, items in enumerate(data):
+            fi = np.dot(self.V[items], self.U[u])
+            diff_fi = fi[:, np.newaxis] - fi[np.newaxis, :]
+            gi = expit(fi)
+            gij = expit(diff_fi)
+            loss += np.sum(gi * np.sum(gij, axis=0))/len(items)
+        loss -= self.reg/2 * (np.sum(self.U ** 2) +  np.sum(self.V ** 2))
+        return loss
+
+
+    def get_list(self, u):
+        curU = self.U[u]
+        fij = np.sum(self.U[u][np.newaxis, :] * self.V, axis=1)
+        return np.argsort(-fij) 

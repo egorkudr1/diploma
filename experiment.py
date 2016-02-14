@@ -6,16 +6,17 @@ from scipy.sparse import csr_matrix
 
 
 def all_measures(train, test, method, skip_train=False, top=None, K=5):
-    print("precision5", rankingmeasure.get_prec_K(train, test, method, skip_train=skip_train, top=top, K=K))
-    sys.stdout.flush()
-    print("1-call5", rankingmeasure.get_one_recal_K(train, test, method, skip_train=skip_train, top=top, K=K))
-    sys.stdout.flush()
-    print("MRR", rankingmeasure.get_MRR(train, test, method, skip_train=skip_train, top=top, K=K))
-    sys.stdout.flush()
-    print("AUC", rankingmeasure.get_AUC(train, test, method, skip_train=skip_train, top=top, K=K))
-    sys.stdout.flush()
-    print("NGDC", rankingmeasure.get_NDCG(train, test, method, skip_train=skip_train, top=top, K=K))
-    sys.stdout.flush()
+    list_metrics = [
+        ('precK',  rankingmeasure.get_prec_K),
+        ('1-call5', rankingmeasure.get_one_recal_K),
+        ('MRR', rankingmeasure.get_MRR),
+        ('AUC', rankingmeasure.get_AUC),
+        ('NGDC', rankingmeasure.get_NDCG),
+        ('MAP', rankingmeasure.get_MAP)
+    ]
+    for name_metric, metric in list_metrics:
+        print(name_metric, metric(train, test, method, skip_train=skip_train, top=top, K=K))
+        sys.stdout.flush()
 
 
 def make_valid_data(data, thres=25, reindex=True):
