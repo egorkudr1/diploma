@@ -5,25 +5,30 @@ import sys
 
 #SVD, implementation training via ALS
 class SVD_ALS:
-    def __init__(self, user_movie, lambda_p = 0.2, lambda_q = 0.001, N=20, K=10):
+    def __init__(self, user_movie, lambda_p = 0.2, lambda_q = 0.001, N=20, K=10, verbose=0):
         self.lambda_p = lambda_p
         self.lambda_q = lambda_q
         self.N = N
         self.K = K
         self.N_user = user_movie[0]
         self.N_movies = user_movie[1]
+        self.verbose = verbose
 
     
     def fit(self, data):
         mu_rating = np.zeros((self.N_movies, self.N_user))
         for u, i, r in data:
-            mu_rating[i - 1, u - 1] = r
+            mu_rating[i, u] = r
         mu_index = mu_rating.astype(np.bool)
 
         self.Q = 0.1 * np.random.random((self.N_movies, self.K))
         self.P = 0.1 * np.random.random((self.N_user, self.K))
         
         for i in range(self.N):
+            if self.verbose == 1:
+                print('iteration', i)
+                sys.stdout.flush()
+
             for k, (index, r) in enumerate(zip(mu_index.T, mu_rating.T)):
                 Qbuf = self.Q[index]
                 A = np.dot(Qbuf.T, Qbuf)
@@ -40,8 +45,8 @@ class SVD_ALS:
             
             
     def predict(self, data):
-        u = data[:, 0] - 1
-        i = data[:, 1] - 1
+        u = data[:, 0]
+        i = data[:, 1]
         return np.sum(self.P[u] * self.Q[i], axis=1)
 
 

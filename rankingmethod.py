@@ -3,6 +3,8 @@ from scipy.special import expit
 import random
 import sys
 import rankingmeasure
+import ratingsmethod
+
 
 class PopRec:
     def __init__(self, user_item):
@@ -45,7 +47,6 @@ class CLiMF:
         self.N_users = user_item[0]
         self.N_items = user_item[1]
         
-
 
     def fit(self, data):
         self.U = 0.01 * np.random.random((self.N_users, self.K))
@@ -288,6 +289,7 @@ class TFMAP:
                 print('iteration', t, 'loss', rankingmeasure.get_MAP(data, data, self, skip_train=False))
                 sys.stdout.flush()
 
+
     def _buffer_constract(self, u, items):
         p = np.min(np.dot(self.V[items], self.U[u]))
         fij = np.dot(self.V, self.U[u])
@@ -318,3 +320,35 @@ class TFMAP:
         curU = self.U[u]
         fij = np.sum(self.U[u][np.newaxis, :] * self.V, axis=1)
         return np.argsort(-fij) 
+
+
+class pureSVD:
+    def __init__(self, user_item, lambda_p=0.2, lambda_q=0.001, maxiter=20, K=10, rate_neg_sample=1.0, verbose=0):
+        self.cf = ratingsmethod.SVD_ALS(user_movie=user_item, lambda_p=lambda_p, lambda_q=lambda_q, N=maxiter, K=K, verbose=verbose)
+        self.N_users = user_item[0]
+        self.N_items = user_item[1]
+        self.rate_neg_sample = rate_neg_sample
+
+
+    def fit(self, data):
+        new_data = []
+        for u, items in enumerate(data):
+            for i in items:
+                new_data.append([u, i, 1])
+
+            n_neg_sample = int(items.shape[0] * self.rate_neg_sample)
+            for t in range(n_neg_sample):
+                while(True):
+                    j = random.randint(0, self.N_items - 1)
+                    if j in items:
+                        continue
+                    break
+                new_data.append([u, j, 0])
+        new_data = np.array(new_data)
+        print(new_data.shape)
+        self.cf.fit(new_data)
+            
+
+    def get_list(self, u):
+        fij = np.sum(self.cf.P[u][np.newaxis, :] * self.cf.Q, axis=1)
+        return np.argsort(-fij)

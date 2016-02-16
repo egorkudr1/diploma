@@ -5,7 +5,7 @@ import pickle
 from scipy.sparse import csr_matrix
 
 
-def all_measures(train, test, method, skip_train=False, top=None, K=5):
+def all_measures(train, test, method, skip_train=True, top=None, K=5):
     list_metrics = [
         ('precK',  rankingmeasure.get_prec_K),
         ('1-call5', rankingmeasure.get_one_recal_K),
@@ -35,6 +35,7 @@ def make_valid_data(data, thres=25, reindex=True):
             epinion[epinion[:, 1] == i, 1] = new_i
     user_item = np.max(epinion, axis=0) + 1
     return epinion, user_item
+
 
 
 def create_listarray(data):
