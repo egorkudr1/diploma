@@ -14,9 +14,14 @@ class PopRec:
 
     def fit(self, data):
         votes = np.bincount(np.array(data).ravel())
-        self.most_pop = np.argsort(-votes)
+        most_pop = np.argsort(-votes)
+        if most_pop.shape[0] < self.N_items:
+            mask = np.in1d(np.arange(self.N_items), most_pop)
+            mask = np.logical_not(mask)
+            most_pop = np.concatenate((most_pop, np.arange(self.N_items)[mask]))
+        self.most_pop = most_pop
         
-        
+
     def get_list(self, u):
         return self.most_pop
 
