@@ -43,7 +43,7 @@ class RandomRec:
 
 
 class CLiMF:
-    def __init__(self, user_item, K=10, reg=0.001, lrate=0.0001, maxiter=30, verbose=0):
+    def __init__(self, user_item, K=10, reg=0.001, lrate=0.0001, maxiter=10, verbose=0):
         self.K = K
         self.reg = reg
         self.lrate = lrate
@@ -129,7 +129,21 @@ class BPR_MF:
         num_pos_feedback = 0
         for items in data:
             num_pos_feedback += len(items)
-            
+        
+        # data_neg = []
+        # for u, items in enumerate(data):
+        #     locn = int(self.rate_neg_sample * len(items))
+        #     loc_list = []
+        #     for l in range(locn):
+        #         while True:
+        #             j = random.randint(0, self.N_items - 1)
+        #             if j in data[u]:
+        #                 continue
+        #             break
+        #         loc_list.append(j)
+        #     data_neg.append(loc_list)
+
+
         for t in range(self.maxiter):
             loss = 0
             for l in range(num_pos_feedback * 10):
@@ -140,7 +154,7 @@ class BPR_MF:
                     if j in data[u]:
                         continue
                     break
-             
+                #j = random.choice(data_neg[u])
                 curU = self.U[u, :].copy()
                 curVi = self.V[i, :].copy()
                 curVj = self.V[j, :].copy()

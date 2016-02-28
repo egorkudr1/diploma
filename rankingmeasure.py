@@ -42,14 +42,14 @@ def wrapper_kmetrics(func):
     def metric(train, test, cls, skip_train=True, top=None, K=5):
         for u, (test_cur, train_cur) in enumerate(zip(test, train)):
             ulist = cls.get_list(u)
-            if  skip_train:
-                mask = np.in1d(ulist, train_cur)
-                ulist = ulist[~mask]
+            # if  skip_train:
+            #     mask = np.in1d(ulist, train_cur)
+            #     ulist = ulist[~mask]
             
             mask = np.in1d(ulist[:K], test_cur)
-            if not skip_train:
-                mask2 = np.in1d(ulist[:K], train_cur)
-                mask = np.logical_or(mask, mask2)
+            # if not skip_train:
+            #     mask2 = np.in1d(ulist[:K], train_cur)
+            #     mask = np.logical_or(mask, mask2)
             
             if top is not None:
                 masktmp = np.in1d(ulist[:K], top)
