@@ -56,6 +56,7 @@ class CLiMF:
     def fit(self, data):
         self.U = 0.01 * np.random.random((self.N_users, self.K))
         self.V = 0.01 * np.random.random((self.N_items, self.K))
+
         for t in range(self.maxiter):
             for u, items in enumerate(data):
                 curU = self.U[u]
