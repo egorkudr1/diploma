@@ -45,8 +45,11 @@ def create_listarray(data):
     return xlist
 
 
-def givenK_train_test(data, K):
-    xlist = create_listarray(data)
+def givenK_train_test(data, K, data_is_xlist=False):
+    if data_is_xlist:
+        xlist = data.copy()
+    else:
+        xlist = create_listarray(data)
     
     train = []
     test = []
@@ -60,6 +63,23 @@ def givenK_train_test(data, K):
         test.append(x[test_ind])
         
     return (train, test, xlist)
+
+
+def ratio_train_test(data, ratio_test):
+    xlist = create_listarray(data)
+
+    train = []
+    test = []
+    for x in xlist:
+        train_ind = np.random.choice(x.shape[0], round(ratio_test * x.shape[0]), replace=False)
+        tmp = np.ones(x.shape[0])
+        tmp[train_ind] = 0
+        test_ind = np.arange(x.shape[0])[tmp == 1]
+        
+        train.append(x[train_ind])
+        test.append(x[test_ind])
+    
+    return (train, test, xlist)        
 
 
 def create_csr(data, user_item, file_name):

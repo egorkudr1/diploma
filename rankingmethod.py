@@ -13,7 +13,10 @@ class PopRec:
     
 
     def fit(self, data):
-        votes = np.bincount(np.array(data).ravel())
+        votes = np.zeros(self.N_items)
+        for items in data:
+            votes += np.bincount(items, minlength=self.N_items)
+        # votes = np.bincount(np.array(data).ravel())
         most_pop = np.argsort(-votes)
         if most_pop.shape[0] < self.N_items:
             mask = np.in1d(np.arange(self.N_items), most_pop)
@@ -24,6 +27,7 @@ class PopRec:
 
     def get_list(self, u):
         return self.most_pop
+
 
 
 class RandomRec:
@@ -106,9 +110,12 @@ class CLiMF:
 
 
     def get_list(self, u):
-        curU = self.U[u]
         fij = np.sum(self.U[u][np.newaxis, :] * self.V, axis=1)
-        return np.argsort(-fij)
+        return np.argsort(-fij) 
+
+
+    def get_f(self, u):
+        return np.dot(self.V, self.U[u])
 
 
 class BPR_MF:
@@ -164,9 +171,9 @@ class BPR_MF:
                 
                 coef = expit(-xuij)
                 
-                self.U[u] += self.lrate * (coef * (curVi - curVj) - self.regU * curU)
-                self.V[i] += self.lrate * (coef * (curU) - self.regIpos * curVi)
-                self.V[j] += self.lrate * (- coef * curU - self.regIneg * curVj)
+                self.U[u] += self.lrate * (coef * (curVi - curVj) + self.regU * curU)
+                self.V[i] += self.lrate * (coef * (curU) + self.regIpos * curVi)
+                self.V[j] += self.lrate * (- coef * curU + self.regIneg * curVj)
 
                 if self.verbose == 2:
                     loss += -np.log(expit(xuij))
@@ -181,9 +188,12 @@ class BPR_MF:
 
 
     def get_list(self, u):
-        curU = self.U[u]
         fij = np.sum(self.U[u][np.newaxis, :] * self.V, axis=1)
         return np.argsort(-fij)
+
+
+    def get_f(self, u):
+        return np.dot(self.V, self.U[u])
 
 
 class iMF:
@@ -247,9 +257,12 @@ class iMF:
 
 
     def get_list(self, u):
-        curU = self.U[u]
         fij = np.sum(self.U[u][np.newaxis, :] * self.V, axis=1)
         return np.argsort(-fij)
+
+
+    def get_f(self, u):
+        return np.dot(self.V, self.U[u])
 
 
 class TFMAP:
@@ -337,9 +350,12 @@ class TFMAP:
 
 
     def get_list(self, u):
-        curU = self.U[u]
         fij = np.sum(self.U[u][np.newaxis, :] * self.V, axis=1)
-        return np.argsort(-fij) 
+        return np.argsort(-fij)
+
+
+    def get_f(self, u):
+        return np.dot(self.V, self.U[u]) 
 
 
 class pureSVD:
@@ -372,3 +388,6 @@ class pureSVD:
     def get_list(self, u):
         fij = np.sum(self.cf.P[u][np.newaxis, :] * self.cf.Q, axis=1)
         return np.argsort(-fij)
+
+    def get_f(self, u):
+        return np.dot(self.V, self.U[u])
