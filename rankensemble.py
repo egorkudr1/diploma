@@ -116,7 +116,7 @@ class inner_value_ensemble:
         self.weights = weights
 
 
-    def fit(self, list_cf):
+    def fit(self, list_cf, validation, train,  trainvalidation):
         self.list_cf = copy.deepcopy(list_cf)
         if self.weights is None:
             self.weights = np.ones(len(list_cf))/len(list_cf)
