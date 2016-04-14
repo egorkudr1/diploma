@@ -65,8 +65,11 @@ def givenK_train_test(data, K, data_is_xlist=False):
     return (train, test, xlist)
 
 
-def ratio_train_test(data, ratio_test):
-    xlist = create_listarray(data)
+def ratio_train_test(data, ratio_test, data_is_xlist=False):
+    if data_is_xlist:
+        xlist = data.copy()
+    else:
+        xlist = create_listarray(data)
 
     train = []
     test = []

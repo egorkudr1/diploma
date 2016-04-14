@@ -118,10 +118,8 @@ class inner_value_ensemble:
 
     def fit(self, list_cf, validation, train,  trainvalidation):
         self.list_cf = copy.deepcopy(list_cf)
-        if self.weights is None:
-            self.weights = np.ones(len(list_cf))/len(list_cf)
-        else:
-            assert(self.weights.shape[0] == len(list_cf))
+        self.weights = np.ones(len(list_cf))/len(list_cf)
+        
 
         self.N_items = self.list_cf[0].N_items
         self.N_methods = len(self.list_cf)
@@ -343,6 +341,7 @@ class regression_ensemble:
 
         X = np.array(X)
         y = np.array(y)
+        
         if self.verbose == 1:
             print("data preparation is done")
             sys.stdout.flush()

@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <set>
+#include <unordered_set>
 #include <random>
 #include <math.h>
 #include <algorithm>
@@ -144,7 +145,7 @@ buffer_constract(double* U, double *V, int u, int N_item, int K, int n_sample, v
     vector<double> pos_f = vector<double>(u_items_size, 0);
     for (int i = 0; i < u_items_size; ++i) {
         for (int k = 0; k < K; ++k) {
-            pos_f[i] += U[K * u + k] * V[K * items[i]];
+            pos_f[i] += U[K * u + k] * V[K * items[i] + k];
         }
     }
     sort(pos_f.begin(), pos_f.end());
@@ -206,23 +207,26 @@ fast_tfmap_fit(double* U, double* V, int N_user, int N_item, int K, int * edge_u
                     f[i] += V[K * data[u][i] + k] * U[K * u + k];
                 }
             }
-            
+            delta_U = vector<double>(K, 0);
             for (int i = 0; i < u_items_size; ++i) {
                 double delta_right = 0, delta_left = 0;
                 for (int j = 0; j < u_items_size; ++j) {
                     delta_left += sigma(f[j] - f[i]);
                     delta_right += dsigma(f[j] - f[i]);
                 }
-                double delta = dsigma(f[i]) * delta_left + sigma(f[i]) * delta_right;
+                double delta = dsigma(f[i]) * delta_left - sigma(f[i]) * delta_right;
                 
                 for (int k = 0; k < K; ++k) {
-                    delta_V[k] = delta * V[K * data[u][i] + k];
+                    delta_U[k] += delta * V[K * data[u][i] + k];
                     for (int j = 0; j < u_items_size; ++j) {
-                        delta_V[k] += sigma(f[i]) * dsigma(f[j] -f[i]) * V[K * data[u][j] + k];
+                        delta_U[k] += sigma(f[i]) * dsigma(f[j] -f[i]) * V[K * data[u][j] + k];
                     }
-                    delta_V[k] /= u_items_size;
-                    delta_V[k] -= reg * U[K * u + k];
                 }
+            }
+            for (int k = 0; k < K; ++k) {
+                delta_U[k] /= u_items_size;
+                delta_U[k] -= reg * U[K * u + k];
+                U[K * u + k] += lrate * delta_U[k];
             }
         }
         // compute derivative of I
@@ -236,20 +240,28 @@ fast_tfmap_fit(double* U, double* V, int N_user, int N_item, int K, int * edge_u
                 }
             }
             for (int i = 0; i < u_items_size; ++i) {
-                vector<double> delta_V;
-                double coef = 0;
-                for (int j = 0; j < int(data[u].size()); ++j) {
-                    coef += dsigma(f[i]) * sigma(f[data[u][j]] - f[buffer[i]]) + (sigma(f[data[u][j]]) - 
-                        sigma(f[buffer[i]])) * dsigma(f[data[u][j]] - f[buffer[i]]);
-                }
+                delta_V = vector<double>(K, 0);
+                if (set_data[u].find(buffer[i]) != set_data[u].end()) {
+                    double coef = 0;
+                    for (int j = 0; j < int(data[u].size()); ++j) {
+                        coef += dsigma(f[buffer[i]]) * sigma(f[data[u][j]] - f[buffer[i]]) + (sigma(f[data[u][j]]) - 
+                            sigma(f[buffer[i]])) * dsigma(f[data[u][j]] - f[buffer[i]]);
+                    }
 
-                for (int k = 0; k < K; ++k) {
-                    delta_V[k] = coef * U[K * u + k] / double(data[u].size()) - reg * V[buffer[i]];
-                }
-                f[buffer[i]] = 0;
-                for (int k = 0; k < K; ++k) {
-                    V[K * buffer[i] + k] += lrate * delta_V[k];
-                    f[buffer[i]] += V[K * buffer[i] + k] * U[K *u + k];
+                    for (int k = 0; k < K; ++k) {
+                        delta_V[k] = coef * U[K * u + k] / double(data[u].size()) - reg * V[buffer[i]];
+                    }
+                    f[buffer[i]] = 0;
+                    for (int k = 0; k < K; ++k) {
+                        V[K * buffer[i] + k] += lrate * delta_V[k];
+                        f[buffer[i]] += V[K * buffer[i] + k] * U[K *u + k];
+                    }
+                } else {
+                    f[buffer[i]] = 0;
+                    for (int k = 0; k < K; ++k) {
+                        V[K * buffer[i] + k] += lrate * (- reg * U[K * u + k]);
+                        f[buffer[i]] += V[K * buffer[i] + k] * U[K *u + k];
+                    }
                 }
             } 
         }
