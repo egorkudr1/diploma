@@ -1,4 +1,5 @@
 import cython
+from scipy import stats
 
 import numpy as np
 cimport numpy as np
@@ -50,6 +51,9 @@ class CLiMF:
     def get_f(self, u):
         return np.dot(self.V, self.U[u])
 
+    def get_tiedrank(self, u):
+        return 1 - stats.rankdata(np.dot(self.V, self.U[u])) / self.N_items
+
 
 class BPR_MF:
     def __init__(self, user_item, K, lrate, regU, regIpos, regIneg, maxiter, verbose=0):
@@ -92,6 +96,9 @@ class BPR_MF:
 
     def get_f(self, u):
         return np.dot(self.V, self.U[u])
+
+    def get_tiedrank(self, u):
+        return 1 - stats.rankdata(np.dot(self.V, self.U[u])) / self.N_items
 
 
 class iMF:
@@ -154,6 +161,9 @@ class iMF:
     def get_f(self, u):
         return np.dot(self.V, self.U[u])
 
+    def get_tiedrank(self, u):
+        return 1 - stats.rankdata(np.dot(self.V, self.U[u])) / self.N_items
+
 
 class TFMAP:
     def __init__(self, user_item, K=10, reg=0.001, lrate=0.001, n_sample=100, maxiter=20, verbose=0):
@@ -194,4 +204,8 @@ class TFMAP:
 
 
     def get_f(self, u):
-        return np.dot(self.V, self.U[u]) 
+        return np.dot(self.V, self.U[u])
+
+
+    def get_tiedrank(self, u):
+        return 1 - stats.rankdata(np.dot(self.V, self.U[u])) / self.N_items 

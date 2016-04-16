@@ -4,6 +4,7 @@ import random
 import sys
 import rankingmeasure
 import ratingsmethod
+from scipy import stats
 
 
 class PopRec:
@@ -356,6 +357,9 @@ class TFMAP:
 
     def get_f(self, u):
         return np.dot(self.V, self.U[u]) 
+
+    def get_tiedrank(self, u):
+        return 1 - stats.rankdata(np.dot(self.V, self.U[u])) / self.N_items
 
 
 class pureSVD:

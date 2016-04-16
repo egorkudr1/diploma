@@ -99,7 +99,7 @@ fast_bpr_mf_fit(double* U, double* V, int N_user, int N_item, int K, int* edge_u
     uniform_int_distribution<int> neg_item_distr(0, N_item - 1);
     
     vector<uniform_int_distribution<int> > pos_item_distr;
-    for (int i = 0; i < N_item; ++i) {
+    for (int i = 0; i < N_user; ++i) {
         pos_item_distr.push_back(uniform_int_distribution<int>(0, int(data[i].size()) - 1));
     }
 

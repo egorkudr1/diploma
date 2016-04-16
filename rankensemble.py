@@ -136,10 +136,11 @@ class inner_value_ensemble:
 
 
 class val_ens:
-    def __init__(self, weights, metric, verbose=0):
+    def __init__(self, weights, metric, tiedrank=False, verbose=0):
         self.verbose = verbose
         self.weights = weights
         self.metric = metric
+        self.tiedrank = tiedrank
 
 
     def fit(self, list_cf, validation, train,  trainvalidation):
@@ -167,9 +168,13 @@ class val_ens:
     def get_list(self, u):
         res = np.zeros(self.N_items)
         for i, alpha in enumerate(self.w):
-            fij = self.list_cf[i].get_f(u)
-            fij -= np.min(fij)
-            fij /= np.max(fij)
+            if not self.tiedrank:
+                fij = self.list_cf[i].get_f(u)
+                fij -= np.min(fij)
+                fij /= np.max(fij)
+            else:
+                fij = self.list_cf[t].get_tiedrank(u)
+            
             res += alpha * fij 
         return np.argsort(-res)
 
@@ -177,19 +182,23 @@ class val_ens:
     def get_f(self, u):
         res = np.zeros(self.N_items)
         for i, alpha in enumerate(self.w):
-            fij = self.list_cf[i].get_f(u)
-            fij -= np.min(fij)
-            fij /= np.max(fij)
+            if not self.tiedrank:
+                fij = self.list_cf[i].get_f(u)
+                fij -= np.min(fij)
+                fij /= np.max(fij)
+            else:
+                fij = self.list_cf[t].get_tiedrank(u)
             res += alpha * fij
         return res
 
 
 class boost_val_ens:
-    def __init__(self,  metric, index, num_weights = 51, verbose=0):
+    def __init__(self,  metric, index, tiedrank=False, num_weights=51, verbose=0):
         self.verbose = verbose
         self.num_weights = num_weights
         self.metric = metric
         self.index = index
+        self.tiedrank = tiedrank
 
 
     def fit(self, list_cf, validation, train, trainvalidation):
@@ -201,7 +210,7 @@ class boost_val_ens:
 
         self.res_model = [copy.deepcopy(self.list_cf[self.index[0]])]
         for i in range(1, len(list_cf)):
-            self.res_model.append(val_ens(weights, self.metric))
+            self.res_model.append(val_ens(weights, self.metric, self.tiedrank))
             self.res_model[i].fit([self.res_model[i - 1], self.list_cf[self.index[i]]], validation, train, trainvalidation)
         
 
@@ -210,11 +219,12 @@ class boost_val_ens:
 
 
 class tree_val_ens:
-    def __init__(self, metric, index, num_weights=51, verbose=0):
+    def __init__(self, metric, index, tiedrank=False, num_weights=51, verbose=0):
         self.verbose = verbose
         self.num_weights = num_weights
         self.metric = metric
         self.index = index
+        self.tiedrank = tiedrank
 
 
     def fit(self, list_cf, validation, train, trainvalidation):
@@ -224,12 +234,12 @@ class tree_val_ens:
 
         weights = np.array([[alpha, 1 - alpha] for alpha in np.linspace(0, 1, self.num_weights)])
 
-        model1 = val_ens(weights, self.metric, [0, 1])
+        model1 = val_ens(weights, self.metric, self.tiedrank)
         model1.fit([list_cf[self.index[0][0]], list_cf[self.index[0][1]]], validation, train, trainvalidation)
-        model2 = val_ens(weights, self.metric, [0, 1])
+        model2 = val_ens(weights, self.metric, self.tiedrank)
         model2.fit([list_cf[self.index[1][0]], list_cf[self.index[1][1]]], validation, train, trainvalidation)
 
-        self.res_model = val_ens(weights, self.metric, [0, 1])
+        self.res_model = val_ens(weights, self.metric, self.tiedrank)
         self.res_model.fit([model1, model2], validation, train, trainvalidation)
 
 
@@ -301,10 +311,11 @@ class tree_val_ens:
 
 
 class regression_ensemble:
-    def __init__(self, model, ratio_neg = 5, verbose=0):
+    def __init__(self, model, tiedrank = False, ratio_neg = 5, verbose=0):
         self.model = copy.deepcopy(model)
         self.ratio_neg = ratio_neg
         self.verbose = verbose
+        self.tiedrank = tiedrank
 
 
     def fit(self, list_cf, validation, train, trainvalidation):
@@ -322,10 +333,14 @@ class regression_ensemble:
 
         fij = np.zeros((self.N_items, len(list_cf)))
         for u, items in enumerate(validation):
-            for j in range(len(self.list_cf)):
-                fij[:, j] = self.list_cf[j].get_f(u)
-            fij -= np.min(fij, axis = 0)[np.newaxis, :]
-            fij /= np.max(fij, axis = 0)[np.newaxis, :]
+            if not self.tiedrank:
+                for j in range(len(self.list_cf)):
+                    fij[:, j] = self.list_cf[j].get_f(u)
+                fij -= np.min(fij, axis = 0)[np.newaxis, :]
+                fij /= np.max(fij, axis = 0)[np.newaxis, :]
+            else:
+                for j in range(len(self.list_cf)):
+                    fij[:, j] = self.list_cf[j].get_tiedrank(u)
             for i in items:
                 X.append(fij[i, :])
                 y.append(1)
@@ -341,7 +356,7 @@ class regression_ensemble:
 
         X = np.array(X)
         y = np.array(y)
-        
+
         if self.verbose == 1:
             print("data preparation is done")
             sys.stdout.flush()
