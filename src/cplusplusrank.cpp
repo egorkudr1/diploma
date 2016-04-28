@@ -69,8 +69,10 @@ fast_climf_fit(double* U, double* V, int N_user, int N_item, int K, int * edge_u
                 }
                 double coef = sigma(-f[j]);
                 for (int i = 0; i < u_items_size; ++i) {
-                    coef += dsigma(f[j] - f[i]) * (1 / (1 - sigma(f[i] - f[j])) - 
-                        1 / (1 - sigma(f[j] - f[i])) );
+                    if (i != j) {
+                        coef += dsigma(f[j] - f[i]) * (1 / (1 - sigma(f[i] - f[j])) - 
+                            1 / (1 - sigma(f[j] - f[i])) );
+                    }
                 }
                 for (int k = 0; k < K; ++k) {
                     V[K * data[u][j] + k] += lrate * (coef * U[K * u + k] - reg * V[K * data[u][j] + k]);
@@ -124,9 +126,9 @@ fast_bpr_mf_fit(double* U, double* V, int N_user, int N_item, int K, int* edge_u
             }
             double coef = sigma(-x);
             for (int k = 0; k < K; ++k) {
-                delta_U[k] = lrate * (coef * (V[K * data[u][i] + k] - V[K * j + k]) + regU * U[K * u + k]);
-                delta_V_i[k] = lrate * (coef * U[K * u + k] + regIpos * V[K * data[u][i] + k]);
-                delta_V_j[k] = lrate * (-coef * U[K * u + k] + regIneg * V[K * j + k]);
+                delta_U[k] = lrate * (coef * (V[K * data[u][i] + k] - V[K * j + k]) - regU * U[K * u + k]);
+                delta_V_i[k] = lrate * (coef * U[K * u + k] - regIpos * V[K * data[u][i] + k]);
+                delta_V_j[k] = lrate * (-coef * U[K * u + k] - regIneg * V[K * j + k]);
             }
 
             for (int k = 0; k < K; ++k) {
