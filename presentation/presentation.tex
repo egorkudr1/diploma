@@ -15,8 +15,8 @@
 \usetheme{Warsaw}%Goettingen}
 
 
-\title{\small{Выпускная квалификационная работа}}
-\subtitle{\large{Построение ансамбля алгоритмов рекомендаций}}
+\title{Построение ансамбля алгоритмов рекомендаций}
+\subtitle{Выпускная квалификационная работа}
 
 %\author{Кудрявцев Георгий}
 \institute{\begin{flushright}
@@ -125,9 +125,107 @@ TFMAP: Optimizing MAP for Top-N Context-aware Recommendation. 2012}
 	
 \begin{figure}[h]
 \center{\includegraphics[width=0.4\linewidth]{latexpic}}
-\caption{Две вертикальные линии обозначают размер величины f. Чем выше точка, тем больше величина. Невертикальные линии обозначают линейные комбинации величин f. Если $\alpha$ = 0, то линейная комбинация учитывает только Ranker $m_1$, если $\alpha = 1$, то  линейная комбинация учитывает только Ranker $m_2$}
+\caption{Графическая демонстрация идеи метода \footnote{Qiang Wu, Christopher J. C. Burges, Krysta M. Svore.	 Adapting Boosting for Information Retrieval Measures. 2010.}}
 \label{pic:latexpic}
 \end{figure}
+
+\end{frame}
+
+\begin{frame}{Экспериментальные оценка}
+
+\begin{table}[H]
+\begin{flushleft}
+\resizebox{0.7\textwidth}{!}{\begin{minipage}{\textwidth}
+\begin{tabular}{|c|c|c|c|c|c|c|c|c|c|c|}
+\hline
+ \multicolumn{11}{|c|}{MovieLens 100k} \\
+\hline
+& \multicolumn{5}{|c|}{ptest = 10\%, pvalid=10\%, maxiter = 5} & \multicolumn{5}{|c|}{ptest = 20\%, valid = 10\%, maxiter = 5}\\
+\hline
+  & BSM  & SV &  RV & OVB & OVT &BSM  & SV & RV & OVB & OVT \\
+\hline
+P@5 & 0.2965 & 0.1602 &	0.2528 & \textbf{0.3069} & 0.3019 & 0.4451 &	0.2531 & 0.3831 & \textbf{0.4498} & 0.4464 \\
+\hline
+1call@5 & 0.7344 & 0.4950 & 0.6712 & \textbf{0.7580} & 0.7555 & 0.8706 & 0.6203 & 0.8039 &	\textbf{0.8784} & 0.8734\\
+\hline
+NDCG@5 &0.3201 & 0.1778 & 0.2783 & \textbf{0.3307} &	0.3257 & 0.4705 & 0.2738 & 0.4070 &	\textbf{0.4770} & 0.4752\\
+\hline
+MAP@5 & 0.5035 & 0.3239 & 0.4599 & \textbf{0.5185} & 0.5152 & 0.6480 & 0.4261 & 0.5763 &	0.6555 & \textbf{0.6562}\\
+\hline
+ \multicolumn{11}{|c|}{Epinion} \\
+\hline
+& \multicolumn{5}{|c|}{ptest = 10\%, pvalid=10\%, maxiter = 5} & \multicolumn{5}{|c|}{ptest = 20\%, valid = 10\%, maxiter = 5}\\
+\hline
+  & BSM  & SV &  RV & OVB & OVT &BSM  & SV & RV & OVB & OVT \\
+\hline
+P@5 & 0.0716 & 0.0295 &	0.0534 & \textbf{0.0764} & 0.0760 & 0.1283 &	0.0550 & 0.1000 & 0.1328 & \textbf{0.1363} \\
+\hline
+1call@5 &0.2710 & 0.1303 & 0.2183 &	\textbf{0.2921} & 0.2908 & 0.4179 & 0.2242 &	0.3595 & 0.4372 & \textbf{0.4438}\\
+\hline
+NDCG@5 &0.0775  & 0.0334 & 0.0572 &	\textbf{0.0830} & 0.0822 &  0.1384 &	0.0615 & 0.1062 & 0.1425 &	\textbf{0.1468}\\
+\hline
+MAP@5 & 0.1561 & 0.0759 & 0.1193 & \textbf{0.1688} & 0.1672 & 0.2536 & 0.1316 & 0.2035 & 0.2607 & \textbf{0.2686}\\
+\hline
+\end{tabular}
+\end{minipage}}
+\end{flushleft}
+\end{table}
+
+\end{frame}
+
+\begin{frame}{Экспериментальные оценка}
+
+\begin{table}[H]
+\begin{flushleft}
+\resizebox{0.7\textwidth}{!}{\begin{minipage}{\textwidth}
+\begin{tabular}{|c|c|c|c|c|c|c|c|c|c|c|}
+\hline
+ \multicolumn{11}{|c|}{Slashdot} \\
+\hline
+& \multicolumn{5}{|c|}{ptest = 10\%, pvalid=10\%, maxiter = 5} & \multicolumn{5}{|c|}{ptest = 20\%, valid = 10\%, maxiter = 5}\\
+\hline
+  & BSM  & SV &  RV & OVB & OVT &BSM  & SV & RV & OVB & OVT \\
+\hline
+P@5 & 0.0431 & 0.0186 &	0.0291 & \textbf{0.0438} & 0.0436 &  0.0746 & 0.0362 & 0.0519 &	0.0757 & \textbf{0.0758}\\
+\hline
+1call@5 & 0.1644 & 0.0866 & 0.1272 & \textbf{0.1683} & 0.1671 & 0.2570 & 0.1577 & 0.2038 & 0.2631 & \textbf{0.2653} \\
+\hline
+NDCG@5 & 0.0473 & 0.0201 &	0.0312 & \textbf{0.0481} & \textbf{0.0481} & 0.0803 &	0.0397 & 0.0556 & 0.0819 & \textbf{0.0822}\\
+\hline
+MAP@5 & 0.0959 & 0.0455 & 0.0684 & 0.0976 & \textbf{0.0978} & 0.1506 & 0.0877 & 0.1140 & 0.1550 & \textbf{0.1562}\\
+\hline
+ \multicolumn{11}{|c|}{Movie Lens 1m} \\
+\hline
+& \multicolumn{5}{|c|}{ptest = 10\%, pvalid=10\%, maxiter = 5} & \multicolumn{5}{|c|}{ptest = 20\%, valid = 10\%, maxiter = 5}\\
+\hline
+  & BSM  & SV &  RV & OVB & OVT &BSM  & SV & RV & OVB & OVT \\
+\hline
+P@5 & 0.2601 & 0.1065 &	0.2374 & 0.2628 & \textbf{0.2639} &  0.3936 & 0.1974 & 0.3616 &	\textbf{0.3983} & 0.3944\\
+\hline
+1call@5 & 0.6541 & 0.3424 & 0.6186 & 0.6566 & \textbf{0.6593} & 0.7985 & 0.5255 & 0.7714 & \textbf{0.8075} & 0.8066\\
+\hline
+NDCG@5 & 0.2795 & 0.1104 & 0.2476 &	0.2830 & \textbf{0.2836} & 0.4127 &	0.2007 & 0.3710 & \textbf{0.4192} & 0.4157\\
+\hline
+MAP@5 & 0.4384& 0.1936 & 0.3859 & 0.4440 & \textbf{0.4438} & 0.5729 & 0.3127 & 0.5166 & \textbf{0.5839} & 0.5822\\
+\hline
+
+\end{tabular}
+\end{minipage}}
+\end{flushleft}
+\end{table}
+
+\end{frame}
+
+\begin{frame}{Результаты работы}
+
+\begin{enumerate}
+
+\item Составлен обзор основных факторизационных методов для задачи ранжирования для набора данных с двоичной релевантностью.
+
+\item Предложен метод ансамблирования, который стабильной улучшает качество работы ранжирования.
+
+\item Реализованы факторизационные методы  и эксперименты на языке python и c++.
+\end{enumerate}
 
 \end{frame}
 
