@@ -1,5 +1,6 @@
-diploma of Kudryavtsev George
-At the moment following methods were realized.
+Diploma of Kudryavtsev George.
+
+The following methods were implemented:
 
 rating methods:
 SVD
