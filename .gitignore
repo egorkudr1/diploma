@@ -1,0 +1,10 @@
+.ipynb_checkpoints
+__pycache__
+src/rank.cpp
+text/*.aux
+text/*.fdb_latexmk
+text/*.fls
+text/*.log
+text/*.out
+text/*.toc
+text/*.synctex.gz
