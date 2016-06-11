@@ -8,3 +8,4 @@ text/*.log
 text/*.out
 text/*.toc
 text/*.synctex.gz
+*.so
