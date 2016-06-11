@@ -2,23 +2,20 @@ import numpy as np
 import pandas as pd
 import copy
 import sys
-from sklearn import linear_model
 import copy
 import random
+from sklearn import linear_model
 import rankingmeasure
 
-
  
-class top_ensemble:
+class TopEnsemble:
     def __init__(self, topK = 15, verbose=0):
         self.verbose = verbose
         self.topK = topK
     
-
     def fit(self, list_cf):
         self.list_cf = copy.deepcopy(list_cf)
     
-
     def get_list(self, u):
         N_items = self.list_cf[1].N_items
         N_methods = len(self.list_cf)
@@ -36,12 +33,11 @@ class top_ensemble:
         return np.array(ans)
 
 
-class rating_ensemble:
+class RatingEnsemble:
     def __init__(self,  weights = None, alpha=0.5, verbose=0):
         self.alpha = alpha
         self.verbose = verbose
         self.weights = weights
-        
         
     def fit(self, list_cf):
         self.list_cf = copy.deepcopy(list_cf)
@@ -52,9 +48,7 @@ class rating_ensemble:
 
         self.N_items = self.list_cf[0].N_items
         self.N_methods = len(self.list_cf)
-        #self.index = np.arange(self.N_items)[::-1] + 1
         self.index = np.exp(-self.alpha * np.arange(self.N_items))
-
 
     def get_list(self, u):
         res = np.zeros(self.N_items)
@@ -64,11 +58,10 @@ class rating_ensemble:
         return np.argsort(-res)
 
 
-class inner_value_ensemble:
+class InnerValueEnsemble:
     def __init__(self, weights = None, verbose=0):
         self.verbose = verbose
         self.weights = weights
-
 
     def fit(self, list_cf, validation, train,  trainvalidation):
         self.list_cf = copy.deepcopy(list_cf)
@@ -77,7 +70,6 @@ class inner_value_ensemble:
 
         self.N_items = self.list_cf[0].N_items
         self.N_methods = len(self.list_cf)
-
 
     def get_list(self, u):
         res = np.zeros(self.N_items)
@@ -89,7 +81,7 @@ class inner_value_ensemble:
         return np.argsort(-res)
 
 
-class val_ens:
+class ValEns:
     def __init__(self, weights, metric, tiedrank=False, verbose=0):
         self.verbose = verbose
         self.weights = weights
@@ -118,7 +110,6 @@ class val_ens:
             sys.stdout.flush()
         self.w = best_w
 
-
     def get_list(self, u):
         res = np.zeros(self.N_items)
         for i, alpha in enumerate(self.w):
@@ -131,7 +122,6 @@ class val_ens:
             
             res += alpha * fij 
         return np.argsort(-res)
-
 
     def get_f(self, u):
         res = np.zeros(self.N_items)
@@ -146,7 +136,7 @@ class val_ens:
         return res
 
 
-class boost_val_ens:
+class BoostValEns:
     def __init__(self,  metric, index, tiedrank=False, num_weights=51, verbose=0):
         self.verbose = verbose
         self.num_weights = num_weights
@@ -164,7 +154,7 @@ class boost_val_ens:
 
         self.res_model = [copy.deepcopy(self.list_cf[self.index[0]])]
         for i in range(1, len(list_cf)):
-            self.res_model.append(val_ens(weights, self.metric, self.tiedrank))
+            self.res_model.append(ValEns(weights, self.metric, self.tiedrank))
             self.res_model[i].fit([self.res_model[i - 1], self.list_cf[self.index[i]]], validation, train, trainvalidation)
         
 
@@ -172,14 +162,13 @@ class boost_val_ens:
         return self.res_model[-1].get_list(u)
 
 
-class tree_val_ens:
+class TreeValEns:
     def __init__(self, metric, index, tiedrank=False, num_weights=51, verbose=0):
         self.verbose = verbose
         self.num_weights = num_weights
         self.metric = metric
         self.index = index
         self.tiedrank = tiedrank
-
 
     def fit(self, list_cf, validation, train, trainvalidation):
         self.list_cf = copy.deepcopy(list_cf)
@@ -188,26 +177,24 @@ class tree_val_ens:
 
         weights = np.array([[alpha, 1 - alpha] for alpha in np.linspace(0, 1, self.num_weights)])
 
-        model1 = val_ens(weights, self.metric, self.tiedrank)
+        model1 = ValEns(weights, self.metric, self.tiedrank)
         model1.fit([list_cf[self.index[0][0]], list_cf[self.index[0][1]]], validation, train, trainvalidation)
-        model2 = val_ens(weights, self.metric, self.tiedrank)
+        model2 = ValEns(weights, self.metric, self.tiedrank)
         model2.fit([list_cf[self.index[1][0]], list_cf[self.index[1][1]]], validation, train, trainvalidation)
 
-        self.res_model = val_ens(weights, self.metric, self.tiedrank)
+        self.res_model = ValEns(weights, self.metric, self.tiedrank)
         self.res_model.fit([model1, model2], validation, train, trainvalidation)
-
 
     def get_list(self, u):
         return self.res_model.get_list(u)
 
 
-class regression_ensemble:
+class RegressionEnsemble:
     def __init__(self, model, tiedrank = False, ratio_neg = 5, verbose=0):
         self.model = copy.deepcopy(model)
         self.ratio_neg = ratio_neg
         self.verbose = verbose
         self.tiedrank = tiedrank
-
 
     def fit(self, list_cf, validation, train, trainvalidation):
         self.list_cf = copy.deepcopy(list_cf)
@@ -249,7 +236,6 @@ class regression_ensemble:
         if self.verbose == 1:
             print("fit is done", self.model.coef_)
             sys.stdout.flush()
-
 
     def get_list(self, u):
         fij = np.zeros((self.N_items, len(self.list_cf)))

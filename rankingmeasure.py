@@ -31,6 +31,7 @@ def __MAP(mask):
         res = 0
     return res
 
+
 def __NGDC(mask):
     D = 1 / np.log(np.arange(mask.shape[0]) + 2)
     maxNDCG = np.sum(D)

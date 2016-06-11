@@ -8,16 +8,25 @@ from scipy import stats
 
 
 class PopRec:
+    """Most popular recommendation
+    Parameters
+    ----------
+    user_item: array, shape = (2)
+        user_item[0] is number of user,
+        user_item[1] is number of items.
+    Attributes
+    ----------
+    most_pop: array, shape = (N_items)
+        Ranked list of items.
+    """
     def __init__(self, user_item):
         self.N_users = user_item[0]
         self.N_items = user_item[1]
     
-
     def fit(self, data):
         votes = np.zeros(self.N_items)
         for items in data:
             votes += np.bincount(items, minlength=self.N_items)
-        # votes = np.bincount(np.array(data).ravel())
         most_pop = np.argsort(-votes)
         if most_pop.shape[0] < self.N_items:
             mask = np.in1d(np.arange(self.N_items), most_pop)
@@ -25,21 +34,24 @@ class PopRec:
             most_pop = np.concatenate((most_pop, np.arange(self.N_items)[mask]))
         self.most_pop = most_pop
         
-
     def get_list(self, u):
         return self.most_pop
 
 
-
 class RandomRec:
+    """Random recommendation
+    Parameters
+    ----------
+    user_item: array, shape = (2)
+        user_item[0] is number of user,
+        user_item[1] is number of items.
+    """
     def __init__(self, user_item):
         self.N_users = user_item[0]
         self.N_items = user_item[1]
 
-
     def fit(self, data):
         pass
-
 
     def get_list(self, u):
         res = np.arange(self.N_items)
@@ -48,6 +60,29 @@ class RandomRec:
 
 
 class CLiMF:
+    """Collaborative less-is-more filtering
+    Parameters
+    ----------
+    user_item: array, shape = (2)
+        user_item[0] is number of user,
+        user_item[1] is number of items.
+    K : int, optional
+        Dimension of latent space. 
+    reg : float, optional
+        Value of regularizator. 
+    lrate : float, optional
+        Learning rate. 
+    maxiter: float, optional
+        Maximum number of iteration. 
+    verbose : int, optional, default 0.
+        Verbose mode when fitting the model.
+    Attributes
+    ----------
+    U: array, shape = (N_users, K)
+        latent vectors of users.
+    V: array, shape = (N_items, K)
+        latent vectors of items.
+    """
     def __init__(self, user_item, K=10, reg=0.001, lrate=0.0001, maxiter=10, verbose=0):
         self.K = K
         self.reg = reg
@@ -57,7 +92,6 @@ class CLiMF:
         self.N_users = user_item[0]
         self.N_items = user_item[1]
         
-
     def fit(self, data):
         self.U = 0.01 * np.random.random((self.N_users, self.K))
         self.V = 0.01 * np.random.random((self.N_items, self.K))
@@ -99,7 +133,6 @@ class CLiMF:
                 print("iteration", t, "loss", self.get_loss(data))
                 sys.stdout.flush()
 
-
     def get_loss(self, data):
         loss = 0
         for u, items in enumerate(data):
@@ -109,17 +142,43 @@ class CLiMF:
         loss -= self.reg / 2 * (np.sum(self.U * self.U) + np.sum(self.V + self.V))
         return loss
 
-
     def get_list(self, u):
         fij = np.sum(self.U[u][np.newaxis, :] * self.V, axis=1)
         return np.argsort(-fij) 
-
 
     def get_f(self, u):
         return np.dot(self.V, self.U[u])
 
 
 class BPR_MF:
+    """Bayesian personalized ranking matrix factorization
+
+    Parameters
+    ----------
+    user_item: array, shape = (2)
+        user_item[0] is number of user,
+        user_item[1] is number of items.
+    K : int, optional
+        Dimension of latent space. 
+    lrate : float, optional
+        Learning rate.
+    regU : float
+        Value of regularizator of user.
+    regIpos : float, optional
+        Value of regularizator of positive items.
+    regIneg : float
+        Value of regularizator of negative items.
+    maxiter: float
+        Maximum number of iteration. 
+    verbose : int, optional, default 0.
+        Verbose mode when fitting the model.
+    Attributes
+    ----------
+    U: array, shape = (N_users, K)
+        latent vectors of users.
+    V: array, shape = (N_items, K)
+        latent vectors of items.
+    """
     def __init__(self, user_item, K, lrate, regU, regIpos, regIneg, maxiter, verbose=0):
         self.K = K
         self.lrate = lrate
@@ -131,7 +190,6 @@ class BPR_MF:
         self.N_items = user_item[1]
         self.verbose = verbose
 
-
     def fit(self, data):
         self.U = 0.1 * np.random.random((self.N_users, self.K))
         self.V = 0.1 * np.random.random((self.N_items, self.K))
@@ -139,20 +197,6 @@ class BPR_MF:
         for items in data:
             num_pos_feedback += len(items)
         
-        # data_neg = []
-        # for u, items in enumerate(data):
-        #     locn = int(self.rate_neg_sample * len(items))
-        #     loc_list = []
-        #     for l in range(locn):
-        #         while True:
-        #             j = random.randint(0, self.N_items - 1)
-        #             if j in data[u]:
-        #                 continue
-        #             break
-        #         loc_list.append(j)
-        #     data_neg.append(loc_list)
-
-
         for t in range(self.maxiter):
             loss = 0
             for l in range(num_pos_feedback * 10):
@@ -163,7 +207,7 @@ class BPR_MF:
                     if j in data[u]:
                         continue
                     break
-                #j = random.choice(data_neg[u])
+
                 curU = self.U[u, :].copy()
                 curVi = self.V[i, :].copy()
                 curVj = self.V[j, :].copy()
@@ -187,17 +231,41 @@ class BPR_MF:
                 print("iteration", t, "loss", loss)
                 sys.stdout.flush()
 
-
     def get_list(self, u):
         fij = np.sum(self.U[u][np.newaxis, :] * self.V, axis=1)
         return np.argsort(-fij)
-
 
     def get_f(self, u):
         return np.dot(self.V, self.U[u])
 
 
 class iMF:
+    """Implicit feedback matrix factorization
+    
+    Parameters
+    ----------
+    user_item: array, shape = (2)
+        user_item[0] is number of user,
+        user_item[1] is number of items.
+    K : int, optional
+        Dimension of latent space. 
+    lrate : float, optional
+        Learning rate.
+    lmbd : float
+        Value of regularizator of user.
+    alpha : float,
+        Coeffitient of weights.
+    maxiter: float
+        Maximum number of iteration. 
+    verbose : int, optional, default 0.
+        Verbose mode when fitting the model.
+    Attributes
+    ----------
+    U: array, shape = (N_users, K)
+        latent vectors of users.
+    V: array, shape = (N_items, K)
+        latent vectors of items.
+    """
     def __init__(self, user_item, K, lmbd, alpha, maxiter, verbose=0):
         self.N_users = user_item[0]
         self.N_items = user_item[1]
@@ -207,8 +275,6 @@ class iMF:
         self.maxiter = maxiter
         self.verbose = verbose
         
-
-
     def fit(self, data):
         self.U = 0.01 * np.random.random((self.N_users, self.K))
         self.V = 0.01 * np.random.random((self.N_items, self.K))
@@ -233,7 +299,6 @@ class iMF:
                 print('iteration', t, 'loss', self.count_loss(data))
                 sys.stdout.flush()
 
-
     def _update_latent(self, V, W, index):
         localV = V[index,  :]
         if localV.shape[0] > 0:
@@ -242,7 +307,6 @@ class iMF:
         else:
             res = np.zeros(self.K)
         return res
-
 
     def count_loss(self, data):
         loss = 0
@@ -256,17 +320,41 @@ class iMF:
         loss += self.lmbd * (np.sum(self.U ** 2) + np.sum(self.V ** 2))
         return loss
 
-
     def get_list(self, u):
         fij = np.sum(self.U[u][np.newaxis, :] * self.V, axis=1)
         return np.argsort(-fij)
-
 
     def get_f(self, u):
         return np.dot(self.V, self.U[u])
 
 
 class TFMAP:
+    """Tensor factorization for mean average precision maximization
+    
+    Parameters
+    ----------
+    user_item: array, shape = (2)
+        user_item[0] is number of user,
+        user_item[1] is number of items.
+    K : int, optional
+        Dimension of latent space. 
+    lrate : float, optional
+        Learning rate.
+    reg : float
+        Value of regularizator of user.
+    alpha : float,
+        Coeffitient of weights.
+    maxiter: float
+        Maximum number of iteration. 
+    verbose : int, optional, default 0.
+        Verbose mode when fitting the model.
+    Attributes
+    ----------
+    U: array, shape = (N_users, K)
+        latent vectors of users.
+    V: array, shape = (N_items, K)
+        latent vectors of items.
+    """
     def __init__(self, user_item, K=10, reg=0.001, lrate=0.001, n_sample=100, maxiter=20, verbose=0):
         self.N_users = user_item[0]
         self.N_items = user_item[1]
@@ -323,7 +411,6 @@ class TFMAP:
                 print('iteration', t, 'loss', rankingmeasure.get_MAP(data, data, self, skip_train=False))
                 sys.stdout.flush()
 
-
     def _buffer_constract(self, u, items):
         p = np.min(np.dot(self.V[items], self.U[u]))
         fij = np.dot(self.V, self.U[u])
@@ -337,7 +424,6 @@ class TFMAP:
             B_minus = B_minus[:len(items)]
         return np.concatenate((items, B_minus))
     
-
     def count_loss(self, data):
         loss = 0
         for u, items in enumerate(data):
@@ -349,11 +435,9 @@ class TFMAP:
         loss -= self.reg/2 * (np.sum(self.U ** 2) +  np.sum(self.V ** 2))
         return loss
 
-
     def get_list(self, u):
         fij = np.sum(self.U[u][np.newaxis, :] * self.V, axis=1)
         return np.argsort(-fij)
-
 
     def get_f(self, u):
         return np.dot(self.V, self.U[u]) 
@@ -368,7 +452,6 @@ class pureSVD:
         self.N_users = user_item[0]
         self.N_items = user_item[1]
         self.rate_neg_sample = rate_neg_sample
-
 
     def fit(self, data):
         new_data = []
@@ -388,7 +471,6 @@ class pureSVD:
         print(new_data.shape)
         self.cf.fit(new_data)
             
-
     def get_list(self, u):
         fij = np.sum(self.cf.P[u][np.newaxis, :] * self.cf.Q, axis=1)
         return np.argsort(-fij)

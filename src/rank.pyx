@@ -1,9 +1,7 @@
 import cython
-from scipy import stats
-
 import numpy as np
+from scipy import stats
 cimport numpy as np
-
 
 
 cdef extern from "cplusplusrank.h":
@@ -11,8 +9,32 @@ cdef extern from "cplusplusrank.h":
     cdef void fast_bpr_mf_fit(double*, double*, int, int, int, int* , int*, int, double, double, double, double, int)
     cdef void fast_tfmap_fit(double*, double*, int, int, int, int*, int*, int, double, double, int, int)
 
+
 class CLiMF:
-    def __init__(self, user_item, K=10, reg=0.001, lrate=0.0001, maxiter=10, verbose=0):
+    """Collaborative less-is-more filtering
+    Parameters
+    ----------
+    user_item: array, shape = (2)
+        user_item[0] is number of user,
+        user_item[1] is number of items.
+    K : int, optional
+        Dimension of latent space. 
+    reg : float, optional
+        Value of regularizator. 
+    lrate : float, optional
+        Learning rate. 
+    maxiter: float, optional
+        Maximum number of iteration. 
+    verbose : int, optional, default 0.
+        Verbose mode when fitting the model.
+    Attributes
+    ----------
+    U: array, shape = (N_users, K)
+        latent vectors of users.
+    V: array, shape = (N_items, K)
+        latent vectors of items.
+    """
+    def __init__(self, user_item, K, reg, lrate, maxiter, verbose=0):
         self.K = K
         self.reg = reg
         self.lrate = lrate
@@ -21,7 +43,6 @@ class CLiMF:
         self.N_users = user_item[0]
         self.N_items = user_item[1]
         
-
     def fit(self, data):
         cdef np.ndarray[double, ndim=2, mode="c"] U = 0.01 * np.random.random((self.N_users, self.K))
         cdef np.ndarray[double, ndim=2, mode="c"] V = 0.01 * np.random.random((self.N_items, self.K))
@@ -47,7 +68,6 @@ class CLiMF:
         fij = np.sum(self.U[u][np.newaxis, :] * self.V, axis=1)
         return np.argsort(-fij) 
 
-
     def get_f(self, u):
         return np.dot(self.V, self.U[u])
 
@@ -56,6 +76,34 @@ class CLiMF:
 
 
 class BPR_MF:
+    """Bayesian personalized ranking matrix factorization
+
+    Parameters
+    ----------
+    user_item: array, shape = (2)
+        user_item[0] is number of user,
+        user_item[1] is number of items.
+    K : int, optional
+        Dimension of latent space. 
+    lrate : float, optional
+        Learning rate.
+    regU : float
+        Value of regularizator of user.
+    regIpos : float, optional
+        Value of regularizator of positive items.
+    regIneg : float
+        Value of regularizator of negative items.
+    maxiter: float
+        Maximum number of iteration. 
+    verbose : int, optional, default 0.
+        Verbose mode when fitting the model.
+    Attributes
+    ----------
+    U: array, shape = (N_users, K)
+        latent vectors of users.
+    V: array, shape = (N_items, K)
+        latent vectors of items.
+    """
     def __init__(self, user_item, K, lrate, regU, regIpos, regIneg, maxiter, verbose=0):
         self.K = K
         self.lrate = lrate
@@ -66,7 +114,6 @@ class BPR_MF:
         self.N_users = user_item[0]
         self.N_items = user_item[1]
         self.verbose = verbose
-
 
     def fit(self, data):
         cdef np.ndarray[double, ndim=2, mode="c"] U = 0.1 * np.random.random((self.N_users, self.K))
@@ -88,11 +135,9 @@ class BPR_MF:
         self.U = U
         self.V = V
 
-
     def get_list(self, u):
         fij = np.sum(self.U[u][np.newaxis, :] * self.V, axis=1)
         return np.argsort(-fij)
-
 
     def get_f(self, u):
         return np.dot(self.V, self.U[u])
@@ -102,6 +147,32 @@ class BPR_MF:
 
 
 class iMF:
+    """Implicit feedback matrix factorization
+    
+    Parameters
+    ----------
+    user_item: array, shape = (2)
+        user_item[0] is number of user,
+        user_item[1] is number of items.
+    K : int, optional
+        Dimension of latent space. 
+    lrate : float, optional
+        Learning rate.
+    lmbd : float
+        Value of regularizator of user.
+    alpha : float,
+        Coeffitient of weights.
+    maxiter: float
+        Maximum number of iteration. 
+    verbose : int, optional, default 0.
+        Verbose mode when fitting the model.
+    Attributes
+    ----------
+    U: array, shape = (N_users, K)
+        latent vectors of users.
+    V: array, shape = (N_items, K)
+        latent vectors of items.
+    """
     def __init__(self, user_item, K, lmbd, alpha, maxiter, verbose=0):
         self.N_users = user_item[0]
         self.N_items = user_item[1]
@@ -111,7 +182,6 @@ class iMF:
         self.maxiter = maxiter
         self.verbose = verbose
         
-
     def fit(self, data):
         self.U = 0.01 * np.random.random((self.N_users, self.K))
         self.V = 0.01 * np.random.random((self.N_items, self.K))
@@ -129,7 +199,6 @@ class iMF:
             for i, users in enumerate(itemdata):
                 self.V[i] = self._update_latent(self.U, W, users)
 
-
     def _update_latent(self, V, W, index):
         localV = V[index,  :]
         if localV.shape[0] > 0:
@@ -139,24 +208,9 @@ class iMF:
             res = np.zeros(self.K)
         return res
 
-
-    # def count_loss(self, data):
-    #     loss = 0
-    #     for u, items in enumerate(data):
-    #         c = np.ones(self.N_items)
-    #         p = np.zeros(self.N_items)
-    #         c[items] += self.alpha
-    #         p[items] = 1
-    #         ulist = np.sum(self.U[u][np.newaxis, :] * self.V, axis=1)
-    #         loss += np.sum(c * (p - ulist) ** 2)
-    #     loss += self.lmbd * (np.sum(self.U ** 2) + np.sum(self.V ** 2))
-    #     return loss
-
-
     def get_list(self, u):
         fij = np.sum(self.U[u][np.newaxis, :] * self.V, axis=1)
         return np.argsort(-fij)
-
 
     def get_f(self, u):
         return np.dot(self.V, self.U[u])
@@ -166,7 +220,33 @@ class iMF:
 
 
 class TFMAP:
-    def __init__(self, user_item, K=10, reg=0.001, lrate=0.001, n_sample=100, maxiter=20, verbose=0):
+    """Tensor factorization for mean average precision maximization
+    
+    Parameters
+    ----------
+    user_item: array, shape = (2)
+        user_item[0] is number of user,
+        user_item[1] is number of items.
+    K : int, optional
+        Dimension of latent space. 
+    lrate : float, optional
+        Learning rate.
+    reg : float
+        Value of regularizator of user.
+    alpha : float,
+        Coeffitient of weights.
+    maxiter: float
+        Maximum number of iteration. 
+    verbose : int, optional, default 0.
+        Verbose mode when fitting the model.
+    Attributes
+    ----------
+    U: array, shape = (N_users, K)
+        latent vectors of users.
+    V: array, shape = (N_items, K)
+        latent vectors of items.
+    """
+    def __init__(self, user_item, K, reg, lrate, n_sample, maxiter, verbose=0):
         self.N_users = user_item[0]
         self.N_items = user_item[1]
         self.K = K
@@ -197,15 +277,12 @@ class TFMAP:
         self.U = U
         self.V = V
     
-
     def get_list(self, u):
         fij = np.sum(self.U[u][np.newaxis, :] * self.V, axis=1)
         return np.argsort(-fij)
 
-
     def get_f(self, u):
         return np.dot(self.V, self.U[u])
-
 
     def get_tiedrank(self, u):
         return 1 - stats.rankdata(np.dot(self.V, self.U[u])) / self.N_items 

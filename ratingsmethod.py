@@ -13,8 +13,7 @@ class SVD_ALS:
         self.N_user = user_movie[0]
         self.N_movies = user_movie[1]
         self.verbose = verbose
-
-    
+ 
     def fit(self, data):
         mu_rating = np.zeros((self.N_movies, self.N_user))
         for u, i, r in data:
@@ -43,7 +42,6 @@ class SVD_ALS:
                 d = np.dot(Pbuf.T, r[index])
                 self.Q[k] = np.dot(inv(self.lambda_q * Pbuf.shape[0] * np.eye(self.K) + A), d)
             
-            
     def predict(self, data):
         u = data[:, 0]
         i = data[:, 1]
@@ -61,7 +59,6 @@ class SVDplusplus:
         self.N = N
         self.K = K
         self.verbose = verbose
-
 
     def fit(self, data):
         self.globalmean = np.mean(data[:, 2])
@@ -125,7 +122,6 @@ class SVDplusplus:
                 print ("iteration", j, "loss", loss)
                 sys.stdout.flush()
     
-
     def __predict_ui(self, u, i):
         w = self.w[u]
         result = self.globalmean + self.usermean[u] + self.itemmean[i] 
@@ -133,12 +129,8 @@ class SVDplusplus:
             result += np.sum(self.Q[i] * self.P[u])
         else:
             result += np.sum(self.Q[i] * (self.P[u] + np.sum(self.Y[self.indexY[u]], axis=0) / w))
-        
-
         return result
         
-    
-
     def predict(self, data):
         result = []
         for u, i in data:

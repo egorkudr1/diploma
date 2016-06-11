@@ -1,11 +1,10 @@
-#include "cplusplusrank.h"
-
 #include <vector>
 #include <set>
 #include <unordered_set>
 #include <random>
 #include <math.h>
 #include <algorithm>
+#include "cplusplusrank.h"
 
 using namespace std;
     
@@ -17,10 +16,11 @@ inline double dsigma(double x) {
     return 1 / (2 + exp(-x) + exp(x));
 }
 
+//Fast learn of Collaborative less-is-more filtering
+
 void 
 fast_climf_fit(double* U, double* V, int N_user, int N_item, int K, int * edge_u, int* edge_i, int len_edge,
-                        double reg, double lrate, int maxiter) {
-    
+                double reg, double lrate, int maxiter) {  
     vector<vector<int> > data = vector<vector<int> >(N_user, vector<int>(0));
     for (int i = 0; i < len_edge; ++i) {
         data[edge_u[i]].push_back(edge_i[i]);
@@ -82,10 +82,12 @@ fast_climf_fit(double* U, double* V, int N_user, int N_item, int K, int * edge_u
     }
 }
 
+
+//Fast learn of Bayesian personalized ranking matrix factorization
+
 void 
 fast_bpr_mf_fit(double* U, double* V, int N_user, int N_item, int K, int* edge_u, int* edge_i, int len_edge, 
                     double regU, double regIpos, double regIneg, double lrate, int maxiter) {
-    
     vector<vector<int> > data = vector<vector<int> >(N_user, vector<int>(0));
     for (int i = 0; i < len_edge; ++i) {
         data[edge_u[i]].push_back(edge_i[i]);
@@ -140,6 +142,7 @@ fast_bpr_mf_fit(double* U, double* V, int N_user, int N_item, int K, int* edge_u
     }
 }
 
+// Construction buffer for TFMAP
 
 vector<int>
 buffer_constract(double* U, double *V, int u, int N_item, int K, int n_sample, vector<int>& items, set<int> & set_items) {
@@ -180,6 +183,7 @@ buffer_constract(double* U, double *V, int u, int N_item, int K, int n_sample, v
 }
 
 
+// Fast learn of Tensor factorization for mean average precision maximization
 void
 fast_tfmap_fit(double* U, double* V, int N_user, int N_item, int K, int * edge_u, int* edge_i, int len_edge,
                     double reg, double lrate, int n_sample, int maxiter) {

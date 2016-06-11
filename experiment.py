@@ -1,8 +1,8 @@
 import numpy as np
-import rankingmeasure
 import sys
 import pickle
 from scipy.sparse import csr_matrix
+import rankingmeasure
 
 
 def all_measures(train, test, method, skip_train=True, top=None, K=5):
@@ -35,7 +35,6 @@ def make_valid_data(data, thres=25, reindex=True):
             epinion[epinion[:, 1] == i, 1] = new_i
     user_item = np.max(epinion, axis=0) + 1
     return epinion, user_item
-
 
 
 def create_listarray(data):
@@ -97,8 +96,6 @@ def create_csr(data, user_item, file_name):
     new_data = csr_matrix((inf,(row, col)), shape=user_item).astype('float')
     with open(file_name, 'wb') as f:
         pickle.dump(new_data, f, 0)
-#     return new_data
-
 
 
 def create_original_sample(data, index):
